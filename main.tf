@@ -32,7 +32,7 @@ resource "null_resource" "ansible-apply" {
     }
 
     inline = [
-      "ansible-pull -i localhost, htt"
+      "ansible-pull -i localhost, https://github.com/raghudevopsb66/roboshop-mutable-ansible roboshop.yml -e HOSTS=localhost -e APP_COMPONENT_ROLE=${var.COMPONENT} -e ENV=${var.ENV}"
     ]
   }
 }
