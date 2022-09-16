@@ -13,15 +13,53 @@ resource "aws_spot_instance_request" "spot" {
   wait_for_fulfillment = true
 }
 
-locals {
-  SPOT_INSTANCE_IDS     = aws_spot_instance_request.spot.*.spot_instance_id
-  ONDEMAND_INSTANCE_IDS = aws_instance.ondemand.*.id
-  ALL_INSTANCE_IDS      = concat(local.SPOT_INSTANCE_IDS, local.ONDEMAND_INSTANCE_IDS)
-}
-
 resource "aws_ec2_tag" "name-tag" {
   count       = length(local.ALL_INSTANCE_IDS)
   resource_id = element(local.ALL_INSTANCE_IDS, count.index)
   key         = "Name"
   value       = "${var.COMPONENT}-${var.ENV}"
+}
+
+resource "null_resource" "ansible-apply" {
+  count = length(local.ALL_PRIVATE_IPS)
+  provisioner "remote-exec" {
+    connection {
+      host     = element(local.ALL_PRIVATE_IPS, count.index)
+      user     = local.ssh_username
+      password = local.ssh_password
+    }
+  }
+}
+
+resource "aws_security_group" "main" {
+  name        = "${var.ENV}-${var.COMPONENT}"
+  description = "${var.ENV}-${var.COMPONENT}"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "rabbitmq"
+    from_port   = 5672
+    to_port     = 5672
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr_block]
+  }
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr_block, var.WORKSTATION_IP]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.ENV}-${var.COMPONENT}"
+  }
 }
