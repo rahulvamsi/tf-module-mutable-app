@@ -14,8 +14,8 @@ resource "aws_spot_instance_request" "spot" {
 }
 
 locals {
-  SPOT_INSTANCE_IDS     = aws_spot_instance_request.spot.spot_instance_id
-  ONDEMAND_INSTANCE_IDS = aws_instance.ondemand.id
+  SPOT_INSTANCE_IDS     = aws_spot_instance_request.spot.*.spot_instance_id
+  ONDEMAND_INSTANCE_IDS = aws_instance.ondemand.*.id
   ALL_INSTANCE_IDS      = concat(local.SPOT_INSTANCE_IDS, local.ONDEMAND_INSTANCE_IDS)
 }
 
