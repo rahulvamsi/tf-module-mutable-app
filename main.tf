@@ -1,16 +1,18 @@
 resource "aws_instance" "ondemand" {
-  count         = var.INSTANCES["ONDEMAND"].instance_count
-  instance_type = var.INSTANCES["ONDEMAND"].instance_type
-  ami           = data.aws_ami.ami.image_id
-  subnet_id     = data.terraform_remote_state.infra.outputs.app_subnets[count.index]
+  count                  = var.INSTANCES["ONDEMAND"].instance_count
+  instance_type          = var.INSTANCES["ONDEMAND"].instance_type
+  ami                    = data.aws_ami.ami.image_id
+  subnet_id              = data.terraform_remote_state.infra.outputs.app_subnets[count.index]
+  vpc_security_group_ids = [aws_security_group.main.id]
 }
 
 resource "aws_spot_instance_request" "spot" {
-  count                = var.INSTANCES["SPOT"].instance_count
-  instance_type        = var.INSTANCES["SPOT"].instance_type
-  ami                  = data.aws_ami.ami.image_id
-  subnet_id            = data.terraform_remote_state.infra.outputs.app_subnets[count.index]
-  wait_for_fulfillment = true
+  count                  = var.INSTANCES["SPOT"].instance_count
+  instance_type          = var.INSTANCES["SPOT"].instance_type
+  ami                    = data.aws_ami.ami.image_id
+  subnet_id              = data.terraform_remote_state.infra.outputs.app_subnets[count.index]
+  wait_for_fulfillment   = true
+  vpc_security_group_ids = [aws_security_group.main.id]
 }
 
 resource "aws_ec2_tag" "name-tag" {
@@ -28,20 +30,24 @@ resource "null_resource" "ansible-apply" {
       user     = local.ssh_username
       password = local.ssh_password
     }
+
+    inline = [
+      "ansible-pull -i localhost, htt"
+    ]
   }
 }
 
 resource "aws_security_group" "main" {
   name        = "${var.ENV}-${var.COMPONENT}"
   description = "${var.ENV}-${var.COMPONENT}"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.terraform_remote_state.infra.outputs.vpc_id
 
   ingress {
     description = "rabbitmq"
     from_port   = 5672
     to_port     = 5672
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr_block]
+    cidr_blocks = [data.terraform_remote_state.infra.outputs.vpc_cidr]
   }
 
   ingress {
@@ -49,7 +55,7 @@ resource "aws_security_group" "main" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr_block, var.WORKSTATION_IP]
+    cidr_blocks = [data.terraform_remote_state.infra.outputs.vpc_cidr, data.terraform_remote_state.infra.outputs.workstation_ip]
   }
 
   egress {
