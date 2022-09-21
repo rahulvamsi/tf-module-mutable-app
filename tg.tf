@@ -22,3 +22,20 @@ resource "aws_lb_target_group" "tg" {
   }
 }
 
+resource "aws_lb_listener_rule" "name-based-rule" {
+  listener_arn = data.terraform_remote_state.infra.outputs.private_lb_listener_arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.COMPONENT}-${var.ENV}.roboshop.internal"]
+    }
+  }
+}
+
+
