@@ -3,5 +3,5 @@ variable "ENV" {}
 variable "INSTANCES" {}
 variable "APP_PORT" {}
 variable "LB_RULE_PRIORITY" {
-  default = 0
+  default = 1000
 }
