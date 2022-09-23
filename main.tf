@@ -25,6 +25,13 @@ resource "aws_ec2_tag" "name-tag" {
   value       = "${var.COMPONENT}-${var.ENV}"
 }
 
+resource "aws_ec2_tag" "prometheus-tag" {
+  count       = length(local.ALL_INSTANCE_IDS)
+  resource_id = element(local.ALL_INSTANCE_IDS, count.index)
+  key         = "Monitor"
+  value       = "Yes"
+}
+
 resource "null_resource" "ansible-apply" {
   count = length(local.ALL_PRIVATE_IPS)
   provisioner "remote-exec" {
