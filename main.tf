@@ -41,7 +41,7 @@ resource "aws_ec2_tag" "prometheus-tag" {
 
 resource "null_resource" "ansible-apply" {
   triggers = {
-    instances = local.ALL_INSTANCE_IDS
+    instances = join(",", local.ALL_INSTANCE_IDS)
   }
   count = length(local.ALL_PRIVATE_IPS)
   provisioner "remote-exec" {
